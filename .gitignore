@@ -1,0 +1,14 @@
+# Angular
+**/node_modules/
+dist/
+.angular/
+
+# Python
+**/__pycache__/
+venv/
+.env
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db
