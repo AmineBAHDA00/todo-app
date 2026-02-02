@@ -32,17 +32,40 @@ Le projet est composé de deux parties : **Backend** et **Frontend**.
 ### 1. Backend
 
 Ouvrez un terminal et exécutez :
+### 1. Backend
+
+Ouvrez un terminal et exécutez :
 
 ```bash
 cd backend
 pip install flask flask-cors pymongo
 python app.py
-
+```
 ### 2. Frontend
 
 Ouvrez un autre terminal et exécutez :
 
 ```bash
 cd frontend
+cd frontend
 npm install
 ng serve
+```
+## Captures d'écran
+
+### 🖼️ Interface Angular
+![Frontend Angular](screenshots/frontend.png)
+
+---
+
+### 🔄 Test de l’API avec Postman
+![Postman GET](screenshots/postman.png)
+
+---
+
+### 🗄️ Données dans MongoDB
+![MongoDB](screenshots/mongodb.png)
+
+
+
+
