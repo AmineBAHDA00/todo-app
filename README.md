@@ -37,3 +37,12 @@ Ouvrez un terminal et exécutez :
 cd backend
 pip install flask flask-cors pymongo
 python app.py
+
+### 2. Frontend
+
+Ouvrez un autre terminal et exécutez :
+
+```bash
+cd frontend
+npm install
+ng serve
