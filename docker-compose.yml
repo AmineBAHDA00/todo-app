@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # Base de données MongoDB
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb_container
+    ports:
+      - "27017:27017"
+
+  # API Flask
+  backend:
+    build: ./backend
+    container_name: flask_backend
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/todoapp
+
+  # Application Angular
+  frontend:
+    build: ./frontend/frontend
+    container_name: angular_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend

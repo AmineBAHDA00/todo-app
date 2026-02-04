@@ -4,7 +4,7 @@ import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class TodoService {
-  private apiUrl = 'http://127.0.0.1:5000/tasks';
+  private apiUrl = 'http://localhost:5000/tasks';
 
   constructor(private http: HttpClient) { }
 

@@ -11,7 +11,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 
 try:
-    client = MongoClient("mongodb://localhost:27017/", serverSelectionTimeoutMS=2000)
+    client = MongoClient("mongodb://mongodb:27017/", serverSelectionTimeoutMS=2000)
     client.admin.command('ping')
     print("✅ Succès : Connecté à MongoDB Compass !")
 except ConnectionFailure:
@@ -82,4 +82,4 @@ def test_db():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
