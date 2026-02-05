@@ -7,7 +7,7 @@ Le frontend utilise un design inspiré du **Glassmorphism**.
 
 ## Fonctionnalités
 
-- Ajouter, modifier et supprimer des tâches.
+- Ajouter, valider et supprimer des tâches.
 - Stockage des données avec **MongoDB**.
 - Interface **Angular** moderne et réactive.
 - API REST avec **Flask**.
@@ -71,3 +71,4 @@ docker-compose up --build
 
 ### 🗄️ Données dans MongoDB
 ![MongoDB](screenshots/mongodb.png)
+
