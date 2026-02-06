@@ -43,7 +43,6 @@ Ouvrez un autre terminal et exécutez :
 
 ```bash
 cd frontend
-cd frontend
 npm install
 ng serve
 ```
@@ -71,4 +70,5 @@ docker-compose up --build
 
 ### 🗄️ Données dans MongoDB
 ![MongoDB](screenshots/mongodb.png)
+
 
