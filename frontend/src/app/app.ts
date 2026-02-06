@@ -7,7 +7,7 @@ import { TodoService } from './services/todo';
   selector: 'app-root',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './app.html', // On va modifier le HTML juste après
+  templateUrl: './app.html', 
   styleUrls: ['./app.css']
 })
 export class AppComponent implements OnInit {
