@@ -1,17 +1,20 @@
 from flask import Flask
 from flask_cors import CORS
-from .db import init_db
+
+from .mongoDB.db import init_db
+from .routes import register_routes
 
 
-def create_app():
+def create_app() -> Flask:
+
     app = Flask(__name__)
     CORS(app)
 
-    # Init database
+    # Initialisation de la base de données
     init_db()
 
-    # Import et enregistrement des routes seulement après init_db
-    from routes import register_routes
+    # Enregistrement des routes
     register_routes(app)
 
     return app
+
