@@ -2,7 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_restx import Api
 
-from .mongoDB.db import init_db
+from .Core.db import init_db
 
 
 def create_app() -> Flask:

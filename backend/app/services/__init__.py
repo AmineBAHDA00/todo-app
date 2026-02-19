@@ -5,7 +5,6 @@ from .task_service import (
     update_task,
     InvalidTaskIdError,
     TaskNotFoundError,
-    DatabaseError,
 )
 from .user_service import (
     get_all_users,
@@ -15,6 +14,7 @@ from .user_service import (
     InvalidUserIdError,
     UserNotFoundError,
 )
+from app.Core import DatabaseError
 
 __all__ = [
     "get_all_tasks",
