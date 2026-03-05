@@ -1,3 +1,5 @@
+import logging
+
 from flask import request
 from flask_restx import Resource, Api, marshal_with, abort, fields, Namespace
 
@@ -11,24 +13,24 @@ from app.services import (
     UserNotFoundError,
     DatabaseError,
 )
-from app.utils.dtos.user_dto import user_fields, user_with_tasks_fields, paginated_users_fields
+from app.utils.dtos.user_dto import (
+    user_fields,
+    user_with_tasks_fields,
+    paginated_users_fields,
+    user_input_fields,
+    user_update_fields,
+)
 from app.utils.dtos.task_dto import status_fields, paginated_tasks_fields
-from app.models.user_model import to_api as user_to_api
-from app.models.task_model import to_api as task_to_api
+
+# Logger du module
+logger = logging.getLogger(__name__)
 
 # Namespace pour organiser les routes
 ns = Namespace('users', description='Opérations sur les utilisateurs')
 
-# Modèles pour la validation avec @api.expect
-user_input_model = ns.model('UserInput', {
-    'name': fields.String(required=True, description='Nom de l\'utilisateur'),
-    'email': fields.String(required=True, description='Email de l\'utilisateur')
-})
-
-user_update_model = ns.model('UserUpdate', {
-    'name': fields.String(required=False, description='Nom de l\'utilisateur (optionnel)'),
-    'email': fields.String(required=False, description='Email de l\'utilisateur (optionnel)')
-})
+# Modèles pour la validation avec @api.expect (basés sur les DTO)
+user_input_model = ns.model("UserInput", user_input_fields)
+user_update_model = ns.model("UserUpdate", user_update_fields)
 
 
 @ns.route('')
@@ -40,7 +42,8 @@ class UserListResource(Resource):
         # Récupération des paramètres de pagination
         try:
             page = int(request.args.get("page", 1))
-            per_page = int(request.args.get("per_page", 10))
+            # Le paramètre de taille de page est nommé "size" dans l'API
+            per_page = int(request.args.get("size", 10))
         except (ValueError, TypeError):
             page = 1
             per_page = 10
@@ -56,10 +59,12 @@ class UserListResource(Resource):
         # Récupération de tous les utilisateurs
         try:
             all_users = get_all_users()
-        except DatabaseError as e:
-            abort(500, message=str(e))
-        except Exception as e:
-            abort(500, message=f"Erreur lors de la récupération des utilisateurs: {str(e)}")
+        except DatabaseError:
+            logger.exception("Erreur de base de données lors de la récupération des utilisateurs")
+            abort(500, message="Une erreur interne est survenue lors de la récupération des utilisateurs.")
+        except Exception:
+            logger.exception("Erreur inattendue lors de la récupération des utilisateurs")
+            abort(500, message="Une erreur inattendue est survenue lors de la récupération des utilisateurs.")
         
         total = len(all_users)
         
@@ -75,15 +80,17 @@ class UserListResource(Resource):
         users_with_tasks = []
         try:
             for user in paginated_users:
-                user_dict = user_to_api(user)
+                user_dict = user.to_api()
                 # Récupération des tâches de l'utilisateur
                 user_tasks = get_all_tasks(user_id=str(user.id))
-                user_dict["tasks"] = [task_to_api(task) for task in user_tasks]
+                user_dict["tasks"] = [task.to_api() for task in user_tasks]
                 users_with_tasks.append(user_dict)
-        except DatabaseError as e:
-            abort(500, message=str(e))
-        except Exception as e:
-            abort(500, message=f"Erreur lors de la récupération des tâches: {str(e)}")
+        except DatabaseError:
+            logger.exception("Erreur de base de données lors de la récupération des tâches des utilisateurs")
+            abort(500, message="Une erreur interne est survenue lors de la récupération des tâches des utilisateurs.")
+        except Exception:
+            logger.exception("Erreur inattendue lors de la récupération des tâches des utilisateurs")
+            abort(500, message="Une erreur inattendue est survenue lors de la récupération des tâches des utilisateurs.")
         
         # Construction de la réponse paginée
         return {
@@ -110,10 +117,12 @@ class UserListResource(Resource):
         try:
             user = create_user(name, email)
             return user, 201
-        except DatabaseError as e:
-            abort(500, message=str(e))
-        except Exception as e:
-            abort(500, message=f"Erreur lors de la création de l'utilisateur: {str(e)}")
+        except DatabaseError:
+            logger.exception("Erreur de base de données lors de la création d'un utilisateur")
+            abort(500, message="Une erreur interne est survenue lors de la création de l'utilisateur.")
+        except Exception:
+            logger.exception("Erreur inattendue lors de la création d'un utilisateur")
+            abort(500, message="Une erreur inattendue est survenue lors de la création de l'utilisateur.")
 
 
 @ns.route('/<string:id>')
@@ -135,21 +144,23 @@ class UserResource(Resource):
                 abort(404, message=f"Utilisateur avec l'ID '{id}' non trouvé")
             
             # Conversion en dictionnaire
-            user_dict = user_to_api(user)
-            
+            user_dict = user.to_api()
+
             # Récupération des tâches de l'utilisateur
             user_tasks = get_all_tasks(user_id=str(user.id))
-            user_dict["tasks"] = [task_to_api(task) for task in user_tasks]
-            
+            user_dict["tasks"] = [task.to_api() for task in user_tasks]
+
             return user_dict
         except InvalidUserIdError as e:
             abort(400, message=str(e))
         except UserNotFoundError as e:
             abort(404, message=str(e))
-        except DatabaseError as e:
-            abort(500, message=str(e))
-        except Exception as e:
-            abort(500, message=f"Erreur lors de la récupération de l'utilisateur: {str(e)}")
+        except DatabaseError:
+            logger.exception("Erreur de base de données lors de la récupération d'un utilisateur")
+            abort(500, message="Une erreur interne est survenue lors de la récupération de l'utilisateur.")
+        except Exception:
+            logger.exception("Erreur inattendue lors de la récupération d'un utilisateur")
+            abort(500, message="Une erreur inattendue est survenue lors de la récupération de l'utilisateur.")
 
     @ns.marshal_with(status_fields)
     @ns.doc('delete_user', description='Supprime un utilisateur')
@@ -161,8 +172,12 @@ class UserResource(Resource):
             abort(400, message=str(e))
         except UserNotFoundError as e:
             abort(404, message=str(e))
-        except DatabaseError as e:
-            abort(500, message=str(e))
+        except DatabaseError:
+            logger.exception("Erreur de base de données lors de la suppression d'un utilisateur")
+            abort(500, message="Une erreur interne est survenue lors de la suppression de l'utilisateur.")
+        except Exception:
+            logger.exception("Erreur inattendue lors de la suppression d'un utilisateur")
+            abort(500, message="Une erreur inattendue est survenue lors de la suppression de l'utilisateur.")
 
     @ns.marshal_with(status_fields)
     @ns.expect(user_update_model, validate=True)
@@ -186,8 +201,12 @@ class UserResource(Resource):
             abort(404, message=str(e))
         except ValueError as e:
             abort(400, message=str(e))
-        except DatabaseError as e:
-            abort(500, message=str(e))
+        except DatabaseError:
+            logger.exception("Erreur de base de données lors de la mise à jour d'un utilisateur")
+            abort(500, message="Une erreur interne est survenue lors de la mise à jour de l'utilisateur.")
+        except Exception:
+            logger.exception("Erreur inattendue lors de la mise à jour d'un utilisateur")
+            abort(500, message="Une erreur inattendue est survenue lors de la mise à jour de l'utilisateur.")
 
 
 @ns.route('/<string:id>/tasks')
@@ -202,13 +221,15 @@ class UserTasksResource(Resource):
             user_exists = any(str(user.id) == id for user in users)
             if not user_exists:
                 abort(404, message=f"Utilisateur avec l'ID '{id}' non trouvé")
-        except DatabaseError as e:
-            abort(500, message=str(e))
+        except DatabaseError:
+            logger.exception("Erreur de base de données lors de la vérification de l'existence d'un utilisateur")
+            abort(500, message="Une erreur interne est survenue lors de la vérification de l'utilisateur.")
         
         # Récupération des paramètres de pagination
         try:
             page = int(request.args.get("page", 1))
-            per_page = int(request.args.get("per_page", 10))
+            # Le paramètre de taille de page est nommé "size" dans l'API
+            per_page = int(request.args.get("size", 10))
         except (ValueError, TypeError):
             page = 1
             per_page = 10
@@ -224,10 +245,12 @@ class UserTasksResource(Resource):
         # Récupération des tâches de l'utilisateur
         try:
             all_tasks = get_all_tasks(user_id=id)
-        except DatabaseError as e:
-            abort(500, message=str(e))
-        except Exception as e:
-            abort(500, message=f"Erreur lors de la récupération des tâches: {str(e)}")
+        except DatabaseError:
+            logger.exception("Erreur de base de données lors de la récupération des tâches d'un utilisateur")
+            abort(500, message="Une erreur interne est survenue lors de la récupération des tâches de l'utilisateur.")
+        except Exception:
+            logger.exception("Erreur inattendue lors de la récupération des tâches d'un utilisateur")
+            abort(500, message="Une erreur inattendue est survenue lors de la récupération des tâches de l'utilisateur.")
         
         total = len(all_tasks)
         
@@ -251,8 +274,3 @@ class UserTasksResource(Resource):
                 "has_prev": page > 1,
             }
         }
-
-
-def register_user_routes(api: Api) -> None:
-    
-    api.add_namespace(ns, path='/users')

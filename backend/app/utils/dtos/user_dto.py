@@ -28,3 +28,15 @@ paginated_users_fields = {
         "has_prev": fields.Boolean,
     }),
 }
+
+# Champs d'input pour la création d'utilisateur
+user_input_fields = {
+    "name": fields.String(required=True, description="Nom de l'utilisateur"),
+    "email": fields.String(required=True, description="Email de l'utilisateur"),
+}
+
+# Champs d'input pour la mise à jour d'utilisateur
+user_update_fields = {
+    "name": fields.String(required=False, description="Nom de l'utilisateur (optionnel)"),
+    "email": fields.String(required=False, description="Email de l'utilisateur (optionnel)"),
+}

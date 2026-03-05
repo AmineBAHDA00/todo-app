@@ -1,3 +1,5 @@
+import logging
+
 from flask import request
 from flask_restx import Resource, Api, marshal_with, abort, fields, Namespace
 
@@ -10,20 +12,23 @@ from app.services import (
     TaskNotFoundError,
     DatabaseError,
 )
-from app.utils.dtos.task_dto import task_fields, status_fields, paginated_tasks_fields
+from app.utils.dtos.task_dto import (
+    task_fields,
+    status_fields,
+    paginated_tasks_fields,
+    task_input_fields,
+    task_update_fields,
+)
+
+# Logger du module
+logger = logging.getLogger(__name__)
 
 # Namespace pour organiser les routes
 ns = Namespace('tasks', description='Opérations sur les tâches')
 
-# Modèles pour la validation avec @api.expect
-task_input_model = ns.model('TaskInput', {
-    'title': fields.String(required=True, description='Titre de la tâche'),
-    'user_id': fields.String(required=False, description='ID de l\'utilisateur propriétaire (optionnel)')
-})
-
-task_update_model = ns.model('TaskUpdate', {
-    'completed': fields.Boolean(required=True, description='Statut de complétion de la tâche')
-})
+# Modèles pour la validation avec @api.expect (basés sur les DTO)
+task_input_model = ns.model("TaskInput", task_input_fields)
+task_update_model = ns.model("TaskUpdate", task_update_fields)
 
 
 @ns.route('')
@@ -35,7 +40,8 @@ class TaskListResource(Resource):
         # Récupération des paramètres de pagination
         try:
             page = int(request.args.get("page", 1))
-            per_page = int(request.args.get("per_page", 10))
+            # Le paramètre de taille de page est nommé "size" dans l'API
+            per_page = int(request.args.get("size", 10))
         except (ValueError, TypeError):
             page = 1
             per_page = 10
@@ -55,9 +61,11 @@ class TaskListResource(Resource):
         try:
             all_tasks = get_all_tasks(user_id=user_id)
         except DatabaseError as e:
-            abort(500, message=str(e))
+            logger.exception("Erreur de base de données lors de la récupération des tâches")
+            abort(500, message="Une erreur interne est survenue lors de la récupération des tâches.")
         except Exception as e:
-            abort(500, message=f"Erreur lors de la récupération des tâches: {str(e)}")
+            logger.exception("Erreur inattendue lors de la récupération des tâches")
+            abort(500, message="Une erreur inattendue est survenue lors de la récupération des tâches.")
         
         total = len(all_tasks)
         
@@ -89,14 +97,16 @@ class TaskListResource(Resource):
         """Crée une nouvelle tâche avec validation automatique via @api.expect"""
         data = ns.payload  # Les données sont déjà validées par @api.expect
         
-        user_id = data.get("user_id")  # Optionnel
+        user_id = data.get("user_id")
         try:
             task = create_task(data["title"], user_id=user_id)
             return task, 201
         except DatabaseError as e:
-            abort(500, message=str(e))
+            logger.exception("Erreur de base de données lors de la création d'une tâche")
+            abort(500, message="Une erreur interne est survenue lors de la création de la tâche.")
         except Exception as e:
-            abort(500, message=f"Erreur lors de la création de la tâche: {str(e)}")
+            logger.exception("Erreur inattendue lors de la création d'une tâche")
+            abort(500, message="Une erreur inattendue est survenue lors de la création de la tâche.")
 
 
 @ns.route('/<string:id>')
@@ -112,7 +122,11 @@ class TaskResource(Resource):
         except TaskNotFoundError as e:
             abort(404, message=str(e))
         except DatabaseError as e:
-            abort(500, message=str(e))
+            logger.exception("Erreur de base de données lors de la suppression d'une tâche")
+            abort(500, message="Une erreur interne est survenue lors de la suppression de la tâche.")
+        except Exception as e:
+            logger.exception("Erreur inattendue lors de la suppression d'une tâche")
+            abort(500, message="Une erreur inattendue est survenue lors de la suppression de la tâche.")
 
     @ns.marshal_with(status_fields)
     @ns.expect(task_update_model, validate=True)
@@ -130,10 +144,9 @@ class TaskResource(Resource):
         except TaskNotFoundError as e:
             abort(404, message=str(e))
         except DatabaseError as e:
-            abort(500, message=str(e))
-
-
-def register_routes(api: Api) -> None:
-    """Enregistre les routes des tâches avec validation via @api.expect"""
-    api.add_namespace(ns, path='/tasks')
+            logger.exception("Erreur de base de données lors de la mise à jour d'une tâche")
+            abort(500, message="Une erreur interne est survenue lors de la mise à jour de la tâche.")
+        except Exception as e:
+            logger.exception("Erreur inattendue lors de la mise à jour d'une tâche")
+            abort(500, message="Une erreur inattendue est survenue lors de la mise à jour de la tâche.")
 

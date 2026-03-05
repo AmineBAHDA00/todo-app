@@ -14,7 +14,7 @@ from .user_service import (
     InvalidUserIdError,
     UserNotFoundError,
 )
-from app.Core import DatabaseError
+from app.db import DatabaseError
 
 __all__ = [
     "get_all_tasks",

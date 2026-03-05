@@ -27,3 +27,14 @@ paginated_tasks_fields = {
     "items": fields.List(fields.Nested(task_fields)),
     "pagination": fields.Nested(pagination_fields),
 }
+
+# Champs d'input pour la création de tâche (utilisés par @api.expect)
+task_input_fields = {
+    "title": fields.String(required=True, description="Titre de la tâche"),
+    "user_id": fields.String(required=True, description="ID de l'utilisateur propriétaire"),
+}
+
+# Champs d'input pour la mise à jour de tâche
+task_update_fields = {
+    "completed": fields.Boolean(required=True, description="Statut de complétion de la tâche"),
+}
